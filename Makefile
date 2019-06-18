@@ -29,7 +29,7 @@ endif
 
 LIBOBJS := $(LIBSRCS:.c=.o)
 
-SRCS := basic.cpp validate.cpp copybw.cpp sanity.cpp
+SRCS := copybw.cpp sanity.cpp
 EXES := $(SRCS:.cpp=)
 
 
@@ -73,16 +73,8 @@ memcpy_sse41.o: memcpy_sse41.c
 	$(COMPILE.c) -msse4.1 -o $@ $^
 
 gdrapi.o: gdrapi.c gdrapi.h 
-validate.o: validate.cpp gdrapi.h common.hpp
-basic.o: basic.cpp gdrapi.h common.hpp
 copybw.o: copybw.cpp gdrapi.h common.hpp
 sanity.o: sanity.cpp gdrapi.h common.hpp
-
-basic: basic.o $(LIB)
-	$(LINK.cc)  -o $@ $^ $(LIBS)
-
-validate: validate.o $(LIB)
-	$(LINK.cc)  -o $@ $^ $(LIBS)
 
 copybw: copybw.o $(LIB)
 	$(LINK.cc)  -o $@ $^ $(LIBS)
@@ -100,7 +92,7 @@ drv_install:
 
 
 clean:
-	rm -f *.o $(EXES) lib*.{a,so}* *~ core.* && \
+	rm -f *.o $(EXES) lib*.{a,so}* *~ core.* gdrdrv/.cache.mk libgdrapi.so* && \
 	$(MAKE) -C gdrdrv clean
 
 .PHONY: driver clean all lib exes lib_install install
