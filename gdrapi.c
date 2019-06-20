@@ -268,8 +268,6 @@ int gdr_get_info(gdr_t g, gdr_mh_t handle, gdr_info_t *info)
         info->va          = params.va;
         info->mapped_size = params.mapped_size;
         info->page_size   = params.page_size;
-        info->tm_cycles   = params.tm_cycles;
-        info->cycles_per_ms = params.tsc_khz;
         info->mapped      = params.mapped;
         info->wc_mapping  = params.wc_mapping;
     }

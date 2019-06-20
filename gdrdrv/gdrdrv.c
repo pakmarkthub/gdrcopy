@@ -33,8 +33,6 @@
 #include <linux/list.h>
 #include <linux/mm.h>
 #include <linux/io.h>
-#include <linux/timex.h>
-#include <linux/timer.h>
 #include <linux/sched.h>
 
 #if LINUX_VERSION_CODE <= KERNEL_VERSION(2,6,32)
@@ -88,7 +86,6 @@ static inline pgprot_t pgprot_modify_writecombine(pgprot_t old_prot)
 {
     return pgprot_writecombine(old_prot);
 }
-#define get_tsc_khz() (get_cycles()/1000) // dirty hack
 static inline int gdr_pfn_is_ram(unsigned long pfn)
 {
     // catch platforms, e.g. POWER8, POWER9 with GPUs not attached via NVLink,
@@ -217,8 +214,6 @@ struct gdr_mr {
     enum { GDR_MR_NONE, GDR_MR_WC, GDR_MR_CACHING } cpu_mapping_type;
     nvidia_p2p_page_table_t *page_table;
     int cb_flag;
-    cycles_t tm_cycles;
-    unsigned int tsc_khz;
     struct vm_area_struct *vma;
     struct address_space *mapping;
 };
@@ -482,7 +477,6 @@ static int gdrdrv_pin_buffer(gdr_info_t *info, void __user *_params)
     u64 page_virt_end;
     size_t rounded_size;
     gdr_mr_t *mr = NULL;
-    cycles_t ta, tb;
 
     if (copy_from_user(&params, _params, sizeof(params))) {
         gdr_err("copy_from_user failed on user pointer 0x%px\n", _params);
@@ -524,18 +518,14 @@ static int gdrdrv_pin_buffer(gdr_info_t *info, void __user *_params)
     gdr_info("invoking nvidia_p2p_get_pages(va=0x%llx len=%lld p2p_tok=%llx va_tok=%x)\n",
              mr->va, mr->mapped_size, mr->p2p_token, mr->va_space);
 
-    ta = get_cycles();
     ret = nvidia_p2p_get_pages(mr->p2p_token, mr->va_space, mr->va, mr->mapped_size, &page_table,
                                gdrdrv_get_pages_free_callback, mr);
-    tb = get_cycles();
     if (ret < 0) {
         gdr_err("nvidia_p2p_get_pages(va=%llx len=%lld p2p_token=%llx va_space=%x) failed [ret = %d]\n",
                 mr->va, mr->mapped_size, mr->p2p_token, mr->va_space, ret);
         goto out;
     }
     mr->page_table = page_table;
-    mr->tm_cycles = tb - ta;
-    mr->tsc_khz = get_tsc_khz();
 
     // check version before accessing page table
     if (!NVIDIA_P2P_PAGE_TABLE_VERSION_COMPATIBLE(page_table)) {
@@ -711,8 +701,6 @@ static int gdrdrv_get_info(gdr_info_t *info, void __user *_params)
     params.va          = mr->va;
     params.mapped_size = mr->mapped_size;
     params.page_size   = mr->page_size;
-    params.tm_cycles   = mr->tm_cycles;
-    params.tsc_khz     = mr->tsc_khz;
     params.mapped      = gdr_mr_is_mapped(mr);
     params.wc_mapping  = gdr_mr_is_wc_mapping(mr);
     if (copy_to_user(_params, &params, sizeof(params))) {
