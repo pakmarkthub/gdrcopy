@@ -910,11 +910,6 @@ static int gdrdrv_mmap(struct file *filp, struct vm_area_struct *vma)
         ret = -EINVAL;
         goto out;
     }
-    if (offset) {
-        gdr_dbg("offset != 0 is not supported\n");
-        ret = -EINVAL;
-        goto out;
-    }    
     if (offset > GPU_PAGE_SIZE * mr->page_table->entries) {
         gdr_dbg("offset %llu too big\n", offset);
         ret = -EINVAL;
