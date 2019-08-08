@@ -29,7 +29,7 @@ endif
 
 LIBOBJS := $(LIBSRCS:.c=.o)
 
-SRCS := copybw.cpp sanity.cpp
+SRCS := copybw.cpp sanity.cpp bug2673250.cpp
 EXES := $(SRCS:.cpp=)
 
 
@@ -75,12 +75,16 @@ memcpy_sse41.o: memcpy_sse41.c
 gdrapi.o: gdrapi.c gdrapi.h gdrapi_internal.h
 copybw.o: copybw.cpp gdrapi.h common.hpp
 sanity.o: sanity.cpp gdrapi.h gdrapi_internal.h common.hpp
+bug2673250.o: bug2673250.cpp gdrapi.h gdrapi_internal.h common.hpp
 
 copybw: copybw.o $(LIB)
 	$(LINK.cc)  -o $@ $^ $(LIBS)
 
 sanity: sanity.o $(LIB)
 	$(LINK.cc)  -o $@ $^ $(LIBS) `pkg-config --libs check`
+
+bug2673250: bug2673250.o $(LIB)
+	$(LINK.cc)  -o $@ $^ $(LIBS)
 
 driver:
 	cd gdrdrv; \
