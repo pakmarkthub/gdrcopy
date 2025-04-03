@@ -31,8 +31,8 @@ DESTINC = $(DESTDIR)$(includedir)
 
 CUDA ?= /usr/local/cuda
 
-LIB_MAJOR_VER ?= $(shell awk '/\#define GDR_API_MAJOR_VERSION/ { print $$3 }' include/gdrapi.h | tr -d '\n')
-LIB_MINOR_VER ?= $(shell awk '/\#define GDR_API_MINOR_VERSION/ { print $$3 }' include/gdrapi.h | tr -d '\n')
+LIB_MAJOR_VER ?= $(shell awk '/#define GDR_API_MAJOR_VERSION/ { print $$3 }' include/gdrapi.h | tr -d '\n')
+LIB_MINOR_VER ?= $(shell awk '/#define GDR_API_MINOR_VERSION/ { print $$3 }' include/gdrapi.h | tr -d '\n')
 
 GDRAPI_ARCH := $(shell ./config_arch)
 GDRAPI_INC := ../include
@@ -41,6 +41,12 @@ LIB_VER:=$(LIB_MAJOR_VER).$(LIB_MINOR_VER)
 LIB_BASENAME:=libgdrapi.so
 LIB_DYNAMIC=$(LIB_BASENAME).$(LIB_VER)
 LIB_SONAME=$(LIB_BASENAME).$(LIB_MAJOR_VER)
+
+# TODO: Dynamically pick OS and ARCH; Add LICENSE file for each tarball; Confirm dist_driver tarball
+ARCH := $(shell uname -m)
+OS := linux
+BUILD_DIR := build
+INSTALL_ROOT := $(BUILD_DIR)/install
 
 all: config driver lib exes
 
@@ -90,5 +96,40 @@ clean:
 	cd src/gdrdrv && \
 	$(MAKE) clean
 
-.PHONY: driver clean all lib exes lib_install drv_install exes_install install
+dist: dist-clean dist-prepare dist-lib dist-tests dist-driver
+	rm -rf $(INSTALL_ROOT)
+
+dist-prepare:
+	mkdir -p $(BUILD_DIR)
+	mkdir -p $(INSTALL_ROOT)
+
+dist-lib: lib
+	mkdir -p $(INSTALL_ROOT)/libgdrapi/lib64
+	mkdir -p $(INSTALL_ROOT)/libgdrapi/include
+	cp src/$(LIB_DYNAMIC) $(INSTALL_ROOT)/libgdrapi/lib64/
+	cd $(INSTALL_ROOT)/libgdrapi/lib64 && \
+	ln -sf $(LIB_DYNAMIC) $(LIB_SONAME) && \
+	ln -sf $(LIB_SONAME) $(LIB_BASENAME)
+	cp include/*.h $(INSTALL_ROOT)/libgdrapi/include/
+	cd $(INSTALL_ROOT) && \
+	tar czf ../libgdrapi-$(OS)-$(ARCH)-$(LIB_VER).tar.gz libgdrapi/
+
+dist-tests: exes
+	mkdir -p $(INSTALL_ROOT)/gdrcopy-tests/bin
+	cp tests/gdrcopy_* $(INSTALL_ROOT)/gdrcopy-tests/bin/
+	cd $(INSTALL_ROOT) && \
+	tar czf ../gdrcopy-tests-$(OS)-$(ARCH)-$(LIB_VER).tar.gz gdrcopy-tests/
+
+dist-driver: driver
+	mkdir -p $(INSTALL_ROOT)/gdrdrv/src
+	cp src/gdrdrv/* $(INSTALL_ROOT)/gdrdrv/src/
+	cp packages/dkms.conf $(INSTALL_ROOT)/gdrdrv/
+	cd $(INSTALL_ROOT) && \
+	tar czf ../gdrdrv-$(OS)-$(ARCH)-$(LIB_VER).tar.gz gdrdrv/
+
+dist-clean:
+	rm -rf $(INSTALL_ROOT)
+	rm -rf $(BUILD_DIR)
+
+.PHONY: driver clean all lib exes lib_install drv_install exes_install install dist dist-prepare dist-lib dist-tests dist-driver dist-clean
 
