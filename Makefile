@@ -42,7 +42,6 @@ LIB_BASENAME:=libgdrapi.so
 LIB_DYNAMIC=$(LIB_BASENAME).$(LIB_VER)
 LIB_SONAME=$(LIB_BASENAME).$(LIB_MAJOR_VER)
 
-# TODO: Dynamically pick OS and ARCH; Add LICENSE file for each tarball; Confirm dist_driver tarball
 ARCH := $(shell uname -m)
 OS := linux
 BUILD_DIR := build
@@ -111,12 +110,14 @@ dist-lib: lib
 	ln -sf $(LIB_DYNAMIC) $(LIB_SONAME) && \
 	ln -sf $(LIB_SONAME) $(LIB_BASENAME)
 	cp include/*.h $(INSTALL_ROOT)/libgdrapi/include/
+	cp LICENSE $(INSTALL_ROOT)/libgdrapi/
 	cd $(INSTALL_ROOT) && \
 	tar czf ../libgdrapi-$(OS)-$(ARCH)-$(LIB_VER).tar.gz libgdrapi/
 
 dist-tests: exes
 	mkdir -p $(INSTALL_ROOT)/gdrcopy-tests/bin
 	cp tests/gdrcopy_* $(INSTALL_ROOT)/gdrcopy-tests/bin/
+	cp LICENSE $(INSTALL_ROOT)/gdrcopy-tests/
 	cd $(INSTALL_ROOT) && \
 	tar czf ../gdrcopy-tests-$(OS)-$(ARCH)-$(LIB_VER).tar.gz gdrcopy-tests/
 
@@ -124,6 +125,7 @@ dist-driver: driver
 	mkdir -p $(INSTALL_ROOT)/gdrdrv/src
 	cp src/gdrdrv/* $(INSTALL_ROOT)/gdrdrv/src/
 	cp packages/dkms.conf $(INSTALL_ROOT)/gdrdrv/
+	cp LICENSE $(INSTALL_ROOT)/gdrdrv/
 	cd $(INSTALL_ROOT) && \
 	tar czf ../gdrdrv-$(OS)-$(ARCH)-$(LIB_VER).tar.gz gdrdrv/
 
