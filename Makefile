@@ -121,10 +121,10 @@ dist-tests: exes
 	cd $(INSTALL_ROOT) && \
 	tar czf ../gdrcopy-tests-$(OS)-$(ARCH)-$(LIB_VER).tar.gz gdrcopy-tests/
 
-dist-driver: driver
+dist-driver:
+	cd src/gdrdrv && make clean
 	mkdir -p $(INSTALL_ROOT)/gdrdrv/src
 	cp src/gdrdrv/* $(INSTALL_ROOT)/gdrdrv/src/
-	cp packages/dkms.conf $(INSTALL_ROOT)/gdrdrv/
 	cp LICENSE $(INSTALL_ROOT)/gdrdrv/
 	cd $(INSTALL_ROOT) && \
 	tar czf ../gdrdrv-$(OS)-$(ARCH)-$(LIB_VER).tar.gz gdrdrv/
