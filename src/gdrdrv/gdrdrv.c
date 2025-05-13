@@ -392,7 +392,7 @@ static inline bool gdr_does_mr_support_cache_mapping(gdr_mr_t *mr)
         ret = gdr_pfn_is_ram(mr->page_table->pages[0]->physical_address >> PAGE_SHIFT);
 #if GDRDRV_NVIDIA_P2P_PAGE_TABLE_VERSION_COMPATIBLE(NVIDIA_P2P_PAGE_TABLE_VERSION, GDRDRV_NVIDIA_P2P_PAGE_TABLE_WITH_MODE_MIN_VERSION)
         // Under the CDMM mode, gdr_pfn_is_ram may return false. However, cache mappings are still supported.
-        ret |= (mr->page_table->mode == NVIDIA_P2P_PAGE_TABLE_MODE_CDMM);
+        ret |= !!(mr->page_table->flags & NVIDIA_P2P_PAGE_TABLE_FLAGS_CPU_CACHEABLE);
 #endif
     }
 
