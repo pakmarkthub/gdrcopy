@@ -63,6 +63,12 @@ if [ "$CUDA_VERSION_MAJOR" -ge 12 ] && [ "$CUDA_VERSION_MINOR" -ge 8 ]; then
     SM_LIST="$SM_LIST 120"
 fi
 
+# For CUDA 13+, use -arch=all
+if [ "$CUDA_VERSION_MAJOR" -ge 13 ]; then
+    echo "-arch=all"
+    exit 0
+fi
+
 # Generate NVCC flags
 GENCODE_FLAGS=""
 for compute in $COMPUTE_LIST; do
