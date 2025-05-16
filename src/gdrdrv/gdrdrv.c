@@ -96,7 +96,7 @@ static const unsigned int GDRDRV_BF3_PCI_ROOT_DEV_DEVICE_ID[2] = {0xa2da, 0xa2db
 //-----------------------------------------------------------------------------
 
 static int gdrdrv_major = 0;
-static int gdrdrv_cpu_can_cache_gpu_mappings = 0;
+static int gdrdrv_cpu_could_cache_gpu_mappings = 0;
 static int gdrdrv_cpu_must_use_device_mapping = 0;
 
 //-----------------------------------------------------------------------------
@@ -208,7 +208,7 @@ static inline bool gdr_pfn_is_ram(unsigned long pfn)
     // For the proprietary flavor, we approximate using the following algorithm.
     unsigned long start = pfn << PAGE_SHIFT;
     unsigned long mask_47bits = (1UL<<47)-1;
-    return gdrdrv_cpu_can_cache_gpu_mappings && (0 == (start & ~mask_47bits));
+    return gdrdrv_cpu_could_cache_gpu_mappings && (0 == (start & ~mask_47bits));
 #endif
 }
 
@@ -385,7 +385,7 @@ typedef struct gdr_mr gdr_mr_t;
 static inline bool gdr_mr_supports_cache_mapping(gdr_mr_t *mr)
 {
     bool ret = false;
-    if (!gdrdrv_cpu_can_cache_gpu_mappings)
+    if (!gdrdrv_cpu_could_cache_gpu_mappings)
         return false;
 
     if (mr && mr->page_table && mr->page_table->entries > 0) {
@@ -1649,7 +1649,7 @@ static int gdrdrv_mmap(struct file *filp, struct vm_area_struct *vma)
 
     if (mr->req_mapping_type == GDR_MR_NONE) {
         if (gdr_mr_supports_cache_mapping(mr)) {
-            WARN_ON_ONCE(!gdrdrv_cpu_can_cache_gpu_mappings);
+            WARN_ON_ONCE(!gdrdrv_cpu_could_cache_gpu_mappings);
             cpu_mapping_type = GDR_MR_CACHING;
         } else if (gdrdrv_cpu_must_use_device_mapping) {
             cpu_mapping_type = GDR_MR_DEVICE;
@@ -1894,15 +1894,15 @@ static int __init gdrdrv_init(void)
         // This might break in the future
         // A better way would be to detect the presence of the IBM-NPU bridges and
         // verify that all GPUs are connected through those
-        gdrdrv_cpu_can_cache_gpu_mappings = 1;
+        gdrdrv_cpu_could_cache_gpu_mappings = 1;
     }
 #elif defined(CONFIG_ARM64)
     // Grace-Hopper supports CPU cached mapping. But this feature might be disabled at runtime.
     // gdrdrv_pin_buffer will do the right thing.
-    gdrdrv_cpu_can_cache_gpu_mappings = 1;
+    gdrdrv_cpu_could_cache_gpu_mappings = 1;
 #endif
 
-    if (gdrdrv_cpu_can_cache_gpu_mappings)
+    if (gdrdrv_cpu_could_cache_gpu_mappings)
         gdr_msg(KERN_INFO, "The platform may support CPU cached mappings. Decision to use cached mappings is left to the pinning function.\n");
 
 #if defined(CONFIG_ARM64)
