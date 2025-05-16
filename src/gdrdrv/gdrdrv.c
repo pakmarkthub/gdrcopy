@@ -382,7 +382,7 @@ struct gdr_mr {
 };
 typedef struct gdr_mr gdr_mr_t;
 
-static inline bool gdr_does_mr_support_cache_mapping(gdr_mr_t *mr)
+static inline bool gdr_mr_supports_cache_mapping(gdr_mr_t *mr)
 {
     bool ret = false;
     if (!gdrdrv_cpu_can_cache_gpu_mappings)
@@ -1294,7 +1294,7 @@ static int gdrdrv_req_mapping_type(gdr_info_t *info, void __user *_params)
             // All pages are either RAM or BAR1. We don't need to check every page.
             // Just in case there is a bug that causes entries == 0, we also check that before accessing pages[0].
             // In this case, we won't do mapping. So, it does not matter if we set req_mapping_type to GDR_MR_CACHING.
-            if (!gdr_does_mr_support_cache_mapping(mr)) {
+            if (!gdr_mr_supports_cache_mapping(mr)) {
                 ret = -EOPNOTSUPP;
                 goto out;
             }
@@ -1647,6 +1647,19 @@ static int gdrdrv_mmap(struct file *filp, struct vm_area_struct *vma)
     mr->cpu_mapping_type = GDR_MR_NONE;
     vma->vm_ops = &gdrdrv_vm_ops;
 
+    if (mr->req_mapping_type == GDR_MR_NONE) {
+        if (gdr_mr_supports_cache_mapping(mr)) {
+            WARN_ON_ONCE(!gdrdrv_cpu_can_cache_gpu_mappings);
+            cpu_mapping_type = GDR_MR_CACHING;
+        } else if (gdrdrv_cpu_must_use_device_mapping) {
+            cpu_mapping_type = GDR_MR_DEVICE;
+        } else {
+            cpu_mapping_type = GDR_MR_WC;
+        }
+    } else {
+        cpu_mapping_type = mr->req_mapping_type;
+    }
+
     // check for physically contiguous IO ranges
     p = 0;
     vaddr = vma->vm_start;
@@ -1655,7 +1668,6 @@ static int gdrdrv_mmap(struct file *filp, struct vm_area_struct *vma)
         unsigned long paddr = mr->page_table->pages[p]->physical_address;
         unsigned nentries = 1;
         size_t len;
-        gdr_mr_type_t chunk_mapping_type = GDR_MR_NONE;
 
         gdr_dbg("range start with p=%d vaddr=%lx page_paddr=%lx\n", p, vaddr, paddr);
 
@@ -1682,25 +1694,6 @@ static int gdrdrv_mmap(struct file *filp, struct vm_area_struct *vma)
         // phys range is [paddr, paddr+len-1]
         gdr_dbg("mapping p=%u entries=%d offset=%llx len=%zu vaddr=%lx paddr=%lx\n", 
                 p, nentries, offset, len, vaddr, paddr);
-        if (mr->req_mapping_type == GDR_MR_NONE) {
-            if (gdr_does_mr_support_cache_mapping(mr)) {
-                WARN_ON_ONCE(!gdrdrv_cpu_can_cache_gpu_mappings);
-                chunk_mapping_type = GDR_MR_CACHING;
-            } else if (gdrdrv_cpu_must_use_device_mapping) {
-                chunk_mapping_type = GDR_MR_DEVICE;
-            } else {
-                // flagging the whole mr as a WC mapping if at least one chunk is WC
-                chunk_mapping_type = GDR_MR_WC;
-            }
-        } else
-            chunk_mapping_type = mr->req_mapping_type;
-
-        if (cpu_mapping_type == GDR_MR_NONE)
-            cpu_mapping_type = chunk_mapping_type;
-
-        // We don't handle when different chunks have different mapping types.
-        // This scenario should never happen.
-        BUG_ON(cpu_mapping_type != chunk_mapping_type);
 
         ret = gdrdrv_remap_gpu_mem(vma, vaddr, paddr, len, cpu_mapping_type);
         if (ret) {
