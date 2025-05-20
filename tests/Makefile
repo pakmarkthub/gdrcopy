@@ -2,6 +2,7 @@ DESTBIN ?=
 CUDA ?= /usr/local/cuda
 NVCC ?= $(CUDA)/bin/nvcc
 GET_CUDA_GENCODE ?= ../scripts/get_cuda_gencode.sh
+GET_CUDA_VERSION ?= ../scripts/get_cuda_version.sh
 
 GDRAPI_INC := ../include
 GDRAPI_SRC := ../src
@@ -15,8 +16,16 @@ COMMONCFLAGS := -O2
 CFLAGS   += $(COMMONCFLAGS)
 CXXFLAGS += $(COMMONCFLAGS)
 
+CUDA_VERSION := $(shell $(GET_CUDA_VERSION) $(NVCC))
+CUDA_VERSION_MAJOR := $(shell echo $(CUDA_VERSION) | cut -d. -f1)
+CUDA_VERSION_MINOR := $(shell echo $(CUDA_VERSION) | cut -d. -f2)
+
+ifeq ($(shell [ $(CUDA_VERSION_MAJOR) -ge 13 ] && echo yes),yes)
+    NVCC_STD += --std=c++17
+endif
+
 # Get NVCC flags for compute capabilities from shell script
-NVCCFLAGS ?= $(shell $(GET_CUDA_GENCODE) $(NVCC))
+NVCCFLAGS ?= $(shell $(GET_CUDA_GENCODE) $(NVCC)) $(NVCC_STD)
 
 LIBS     := -lcuda -lpthread -ldl -lgdrapi
 
