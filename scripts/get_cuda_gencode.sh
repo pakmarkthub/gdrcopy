@@ -52,10 +52,10 @@ if [ "$CUDA_VERSION_MAJOR" -ge 12 ]; then
     SM_LIST="$SM_LIST 90"
 fi
 
-# Add Blackwell (10.0) if CUDA >= 12.6
-if [ "$CUDA_VERSION_MAJOR" -ge 12 ] && [ "$CUDA_VERSION_MINOR" -ge 6 ]; then
-    COMPUTE_LIST="$COMPUTE_LIST 100"
-    SM_LIST="$SM_LIST 100"
+# Add Blackwell (10.0 and 12.0) if CUDA >= 12.8
+if [ "$CUDA_VERSION_MAJOR" -ge 12 ] && [ "$CUDA_VERSION_MINOR" -ge 8 ]; then
+    COMPUTE_LIST="$COMPUTE_LIST 100 120"
+    SM_LIST="$SM_LIST 100 120"
 fi
 
 # Add Blackwell (12.0) if CUDA >= 12.8
