@@ -1648,7 +1648,9 @@ static int gdrdrv_mmap(struct file *filp, struct vm_area_struct *vma)
     vma->vm_ops = &gdrdrv_vm_ops;
 
     // nvidia_p2p_get_pages* always return PFNs with the same mapping type.
-    if (gdr_mr_supports_cache_mapping(mr)) {
+    if (mr->req_mapping_type != GDR_MR_NONE) {
+        cpu_mapping_type = mr->req_mapping_type;
+    } else if (gdr_mr_supports_cache_mapping(mr)) {
         WARN_ON_ONCE(!gdrdrv_cpu_could_cache_gpu_mappings);
         cpu_mapping_type = GDR_MR_CACHING;
     } else if (gdrdrv_cpu_must_use_device_mapping) {
