@@ -54,7 +54,7 @@ if version_ge "$CUDA_VERSION_FULL" "12.0"; then
     SM_LIST="$SM_LIST 90"
 fi
 
-# Add all supported architectures if CUDA >= 12.6
+# For CUDA >= 12.6, enable all supported architectures since this is the first version where nvcc drops sm50 support, and pplat requires atomics (available only in sm60+)
 if version_ge "$CUDA_VERSION_FULL" "12.6"; then
     echo "-arch=all"
     exit 0
