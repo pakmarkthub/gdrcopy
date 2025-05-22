@@ -4,16 +4,18 @@
 NVCC="${1:-nvcc}"
 DIR="$(dirname "$0")"
 CUDA_VERSION_FULL=$($DIR/get_cuda_version.sh $NVCC)
-CUDA_VERSION_MAJOR=$(echo "$CUDA_VERSION_FULL" | cut -d'.' -f1)
-CUDA_VERSION_MINOR=$(echo "$CUDA_VERSION_FULL" | cut -d'.' -f2)
 
 if [ -z "$CUDA_VERSION_FULL" ]; then
     echo "Error: Could not detect CUDA version" >&2
     exit 1
 fi
 
+version_ge() {
+    # returns 0 (true) if $1 >= $2, 1 (false) otherwise
+    [ "$(printf '%s\n' "$1" "$2" | sort -V | head -n1)" = "$2" ]
+}
 # Require CUDA >= 8.0
-if [ "$CUDA_VERSION_MAJOR" -lt 8 ]; then
+if ! version_ge "$CUDA_VERSION_FULL" "8.0"; then
     echo "Error: CUDA version must be >= 8.0" >&2
     exit 1
 fi
@@ -23,49 +25,37 @@ COMPUTE_LIST="60 61 62"
 SM_LIST="60 61 62"
 
 # Add Volta (7.0) if CUDA >= 9.0
-if [ "$CUDA_VERSION_MAJOR" -ge 9 ]; then
+if version_ge "$CUDA_VERSION_FULL" "9.0"; then
     COMPUTE_LIST="$COMPUTE_LIST 70 72"
     SM_LIST="$SM_LIST 70 72"
 fi
 
 # Add Turing (7.5) if CUDA >= 10.0
-if [ "$CUDA_VERSION_MAJOR" -ge 10 ]; then
+if version_ge "$CUDA_VERSION_FULL" "10.0"; then
     COMPUTE_LIST="$COMPUTE_LIST 75"
     SM_LIST="$SM_LIST 75"
 fi
 
 # Add Ampere (8.0, 8.6, 8.7) if CUDA >= 11.1
-if [ "$CUDA_VERSION_MAJOR" -ge 11 ] && [ "$CUDA_VERSION_MINOR" -ge 1 ]; then
+if version_ge "$CUDA_VERSION_FULL" "11.1"; then
     COMPUTE_LIST="$COMPUTE_LIST 80 86 87"
     SM_LIST="$SM_LIST 80 86 87"
 fi
 
 # Add Ada Lovelace (8.9) if CUDA >= 11.8
-if [ "$CUDA_VERSION_MAJOR" -ge 11 ] && [ "$CUDA_VERSION_MINOR" -ge 8 ]; then
+if version_ge "$CUDA_VERSION_FULL" "11.8"; then
     COMPUTE_LIST="$COMPUTE_LIST 89"
     SM_LIST="$SM_LIST 89"
 fi
 
 # Add Hopper (9.0) if CUDA >= 12.0
-if [ "$CUDA_VERSION_MAJOR" -ge 12 ]; then
+if version_ge "$CUDA_VERSION_FULL" "12.0"; then
     COMPUTE_LIST="$COMPUTE_LIST 90"
     SM_LIST="$SM_LIST 90"
 fi
 
-# Add Blackwell (10.0) if CUDA >= 12.6
-if [ "$CUDA_VERSION_MAJOR" -ge 12 ] && [ "$CUDA_VERSION_MINOR" -ge 6 ]; then
-    COMPUTE_LIST="$COMPUTE_LIST 100"
-    SM_LIST="$SM_LIST 100"
-fi
-
-# Add Blackwell (12.0) if CUDA >= 12.8
-if [ "$CUDA_VERSION_MAJOR" -ge 12 ] && [ "$CUDA_VERSION_MINOR" -ge 8 ]; then
-    COMPUTE_LIST="$COMPUTE_LIST 120"
-    SM_LIST="$SM_LIST 120"
-fi
-
-# For CUDA 13+, use -arch=all
-if [ "$CUDA_VERSION_MAJOR" -ge 13 ]; then
+# For CUDA >= 12.6, enable all supported architectures since this is the first version where nvcc drops sm50 support, and pplat requires atomics (available only in sm60+)
+if version_ge "$CUDA_VERSION_FULL" "12.6"; then
     echo "-arch=all"
     exit 0
 fi
