@@ -1,8 +1,9 @@
 #!/bin/bash
 
-# Get CUDA version from nvcc
+# Get CUDA version from get_cuda_version.sh
 NVCC="${1:-nvcc}"
-CUDA_VERSION_FULL=$("$NVCC" --version | grep "release" | sed 's/.*release //' | sed 's/,.*//')
+DIR="$(dirname "$0")"
+CUDA_VERSION_FULL=$($DIR/get_cuda_version.sh $NVCC)
 CUDA_VERSION_MAJOR=$(echo "$CUDA_VERSION_FULL" | cut -d'.' -f1)
 CUDA_VERSION_MINOR=$(echo "$CUDA_VERSION_FULL" | cut -d'.' -f2)
 
