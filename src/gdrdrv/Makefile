@@ -49,11 +49,16 @@ MODULE_DESTDIR := $(MODULES_DIR)/$(MODULE_SUBDIR)
 DEPMOD := /sbin/depmod
 
 export NVIDIA_SRC_DIR ?= $(shell { find /usr/src/kernel-modules/nvidia-* /usr/src/nvidia-* -name "nv-p2p.c" -print -quit | xargs dirname || echo "NVIDIA_DRIVER_MISSING"; } 2>/dev/null)
-export NVIDIA_IS_OPENSOURCE ?= $(shell grep -r "MODULE_LICENSE" $(NVIDIA_SRC_DIR)/ | grep -s -q "GPL" && echo "y")
+
+# On RHEL10, shell with $(PARAMS) is not properly expanded. Use := to force expansion.
+_NVIDIA_IS_OPENSOURCE := $(shell grep -r "MODULE_LICENSE" $(NVIDIA_SRC_DIR)/ | grep -s -q "GPL" && echo "y")
+export NVIDIA_IS_OPENSOURCE ?= $(_NVIDIA_IS_OPENSOURCE)
 
 CONF_SCRIPT_DIR ?= $(PWD)/../../scripts
-export HAVE_VM_FLAGS_SET ?= $(shell $(CONF_SCRIPT_DIR)/test_gdrdrv_HAVE_VM_FLAGS_SET.sh -k $(KVER))
-export HAVE_PROC_OPS ?= $(shell $(CONF_SCRIPT_DIR)/test_gdrdrv_HAVE_PROC_OPS.sh -k $(KVER))
+_HAVE_VM_FLAGS_SET := $(shell $(CONF_SCRIPT_DIR)/test_gdrdrv_HAVE_VM_FLAGS_SET.sh -k $(KVER))
+export HAVE_VM_FLAGS_SET ?= $(_HAVE_VM_FLAGS_SET)
+_HAVE_PROC_OPS := $(shell $(CONF_SCRIPT_DIR)/test_gdrdrv_HAVE_PROC_OPS.sh -k $(KVER))
+export HAVE_PROC_OPS ?= $(_HAVE_PROC_OPS)
 
 all: build
 
