@@ -2,6 +2,12 @@
 
 ## [master]
 
+## [2.5.1] - 2025-07-18
+- Support RHEL 10.0.
+- Support CUDA 13.0.
+- Support the CDMM mode.
+- Fix errors when compiling with CUDA 12.6.
+
 ## [2.5] - 2025-03-21
 - Introduce gdr\_pin\_buffer\_v2 API, GDR\_PIN\_FLAG\_FORCE\_PCIE pin flag and the GDR\_ATTR\_SUPPORT\_PIN\_FLAG\_FORCE\_PCIE attribute. Extend gdrcopy\_sanity coverage to those new APIs.
 - Waive some unit tests in gdrcopy\_sanity if the GPU compute mode is not set as default.
@@ -118,6 +124,7 @@
 - Add a script for packaging gdrcopy in the rpm format.
 
 [master]: https://github.com/NVIDIA/gdrcopy
+[2.5]: https://github.com/NVIDIA/gdrcopy/releases/tag/v2.5.1
 [2.5]: https://github.com/NVIDIA/gdrcopy/releases/tag/v2.5
 [2.4.4]: https://github.com/NVIDIA/gdrcopy/releases/tag/v2.4.4
 [2.4.3]: https://github.com/NVIDIA/gdrcopy/releases/tag/v2.4.3

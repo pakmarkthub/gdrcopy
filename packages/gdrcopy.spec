@@ -365,6 +365,11 @@ rm -rf $RPM_BUILD_DIR/%{name}-%{version}
 %changelog
 * Fri Mar 21 2025 GPUDirect Team <gpudirect@nvidia.com> %{GDR_VERSION}-%{_release}
 - See CHANGELOG.md.
+* Fri Jul 18 2025 GPUDirect Team <gpudirect@nvidia.com> 2.5.1-%{_release}
+- Support RHEL 10.0.
+- Support CUDA 13.0.
+- Support the CDMM mode.
+- Fix errors when compiling with CUDA 12.6.
 * Fri Mar 21 2025 GPUDirect Team <gpudirect@nvidia.com> 2.5-%{_release}
 - Introduce gdr_pin_buffer_v2 API, GDR_PIN_FLAG_FORCE_PCIE pin flag and the GDR_ATTR_SUPPORT_PIN_FLAG_FORCE_PCIE attribute. Extend gdrcopy_sanity coverage to those new APIs.
 - Waive some unit tests in gdrcopy_sanity if the GPU compute mode is not set as default.
