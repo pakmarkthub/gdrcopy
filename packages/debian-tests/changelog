@@ -2,14 +2,14 @@ gdrcopy-tests (@FULL_VERSION@) stable; urgency=low
 
   * See CHANGELOG.md.
 
- -- GPUDirect Team <gpudirect@nvidia.com>  Fri, 18 July 2025 11:59:59 -0700
+ -- GPUDirect Team <gpudirect@nvidia.com>  Fri, 18 Jul 2025 11:59:59 -0700
 
 gdrcopy-tests (2.5.1) stable; urgency=low
 
   * Support CUDA 13.0.
   * Fix errors when compiling with CUDA 12.6.
 
- -- GPUDirect Team <gpudirect@nvidia.com>  Fri, 18 July 2025 11:59:59 -0700
+ -- GPUDirect Team <gpudirect@nvidia.com>  Fri, 18 Jul 2025 11:59:59 -0700
 
 gdrcopy-tests (2.5) stable; urgency=low
 
