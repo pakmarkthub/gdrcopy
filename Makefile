@@ -42,6 +42,11 @@ LIB_BASENAME:=libgdrapi.so
 LIB_DYNAMIC=$(LIB_BASENAME).$(LIB_VER)
 LIB_SONAME=$(LIB_BASENAME).$(LIB_MAJOR_VER)
 
+ARCH := $(shell uname -m)
+OS := linux
+BUILD_DIR := build
+INSTALL_ROOT := $(BUILD_DIR)/install
+
 all: config driver lib exes
 
 version:
@@ -90,5 +95,43 @@ clean:
 	cd src/gdrdrv && \
 	$(MAKE) clean
 
-.PHONY: driver clean all lib exes lib_install drv_install exes_install install
+dist: dist-clean dist-prepare dist-lib dist-tests dist-driver
+	rm -rf $(INSTALL_ROOT)
+
+dist-prepare:
+	mkdir -p $(BUILD_DIR)
+	mkdir -p $(INSTALL_ROOT)
+
+dist-lib: lib
+	mkdir -p $(INSTALL_ROOT)/libgdrapi/lib64
+	mkdir -p $(INSTALL_ROOT)/libgdrapi/include
+	cp src/$(LIB_DYNAMIC) $(INSTALL_ROOT)/libgdrapi/lib64/
+	cd $(INSTALL_ROOT)/libgdrapi/lib64 && \
+	ln -sf $(LIB_DYNAMIC) $(LIB_SONAME) && \
+	ln -sf $(LIB_SONAME) $(LIB_BASENAME)
+	cp include/*.h $(INSTALL_ROOT)/libgdrapi/include/
+	cp LICENSE $(INSTALL_ROOT)/libgdrapi/
+	cd $(INSTALL_ROOT) && \
+	tar czf ../libgdrapi-$(OS)-$(ARCH)-$(LIB_VER).tar.gz libgdrapi/
+
+dist-tests: exes
+	mkdir -p $(INSTALL_ROOT)/gdrcopy-tests/bin
+	cp tests/gdrcopy_* $(INSTALL_ROOT)/gdrcopy-tests/bin/
+	cp LICENSE $(INSTALL_ROOT)/gdrcopy-tests/
+	cd $(INSTALL_ROOT) && \
+	tar czf ../gdrcopy-tests-$(OS)-$(ARCH)-$(LIB_VER).tar.gz gdrcopy-tests/
+
+dist-driver:
+	cd src/gdrdrv && make clean
+	mkdir -p $(INSTALL_ROOT)/gdrdrv/src
+	cp src/gdrdrv/* $(INSTALL_ROOT)/gdrdrv/src/
+	cp LICENSE $(INSTALL_ROOT)/gdrdrv/
+	cd $(INSTALL_ROOT) && \
+	tar czf ../gdrdrv-$(OS)-$(ARCH)-$(LIB_VER).tar.gz gdrdrv/
+
+dist-clean:
+	rm -rf $(INSTALL_ROOT)
+	rm -rf $(BUILD_DIR)
+
+.PHONY: driver clean all lib exes lib_install drv_install exes_install install dist dist-prepare dist-lib dist-tests dist-driver dist-clean
 

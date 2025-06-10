@@ -96,7 +96,7 @@ static const unsigned int GDRDRV_BF3_PCI_ROOT_DEV_DEVICE_ID[2] = {0xa2da, 0xa2db
 //-----------------------------------------------------------------------------
 
 static int gdrdrv_major = 0;
-static int gdrdrv_cpu_can_cache_gpu_mappings = 0;
+static int gdrdrv_cpu_could_cache_gpu_mappings = 0;
 static int gdrdrv_cpu_must_use_device_mapping = 0;
 
 //-----------------------------------------------------------------------------
@@ -176,12 +176,12 @@ static inline pgprot_t pgprot_modify_device(pgprot_t old_prot)
     return old_prot;
 }
 #define get_tsc_khz() cpu_khz // tsc_khz
-static inline int gdr_pfn_is_ram(unsigned long pfn)
+static inline bool gdr_pfn_is_ram(unsigned long pfn)
 {
     // page_is_ram is GPL-only. Regardless there are no x86_64
     // platforms supporting coherent GPU mappings, so we would not use
     // this function anyway.
-    return 0;
+    return false;
 }
 
 #elif defined(CONFIG_PPC64)
@@ -197,7 +197,7 @@ static inline pgprot_t pgprot_modify_device(pgprot_t old_prot)
     return old_prot;
 }
 #define get_tsc_khz() (get_cycles()/1000) // dirty hack
-static inline int gdr_pfn_is_ram(unsigned long pfn)
+static inline bool gdr_pfn_is_ram(unsigned long pfn)
 {
     // catch platforms, e.g. POWER8, POWER9 with GPUs not attached via NVLink,
     // where GPU memory is non-coherent
@@ -208,7 +208,7 @@ static inline int gdr_pfn_is_ram(unsigned long pfn)
     // For the proprietary flavor, we approximate using the following algorithm.
     unsigned long start = pfn << PAGE_SHIFT;
     unsigned long mask_47bits = (1UL<<47)-1;
-    return gdrdrv_cpu_can_cache_gpu_mappings && (0 == (start & ~mask_47bits));
+    return gdrdrv_cpu_could_cache_gpu_mappings && (0 == (start & ~mask_47bits));
 #endif
 }
 
@@ -221,14 +221,14 @@ static inline pgprot_t pgprot_modify_device(pgprot_t old_prot)
 {
     return pgprot_device(old_prot);
 }
-static inline int gdr_pfn_is_ram(unsigned long pfn)
+static inline bool gdr_pfn_is_ram(unsigned long pfn)
 {
 #ifdef GDRDRV_OPENSOURCE_NVIDIA
     // page_is_ram is a GPL symbol. We can use it with the open flavor.
     return page_is_ram(pfn);
 #else
     // For the proprietary flavor of NVIDIA driver, we use WC mapping.
-    return 0;
+    return false;
 #endif
 }
 
@@ -274,11 +274,22 @@ static inline int gdr_pfn_is_ram(unsigned long pfn)
     NVIDIA_P2P_VERSION_COMPATIBLE(p, NVIDIA_P2P_PAGE_TABLE_VERSION)
 #endif
 
+/**
+ * NVIDIA_P2P_* macros are as defined in new nv-p2p.h.
+ * This macro is similar but does not require the page_table object.
+ * It can also be used to check in preprocessor directives.
+ */
+#define GDRDRV_NVIDIA_P2P_PAGE_TABLE_VERSION_COMPATIBLE(cur_ver, min_ver)         \
+    ((NVIDIA_P2P_MAJOR_VERSION(cur_ver) == NVIDIA_P2P_MAJOR_VERSION(min_ver)) &&  \
+    (NVIDIA_P2P_MINOR_VERSION(cur_ver) >= NVIDIA_P2P_MINOR_VERSION(min_ver)))
+
 #ifdef GDRDRV_OPENSOURCE_NVIDIA
 #define GDRDRV_BUILT_FOR_NVIDIA_FLAVOR_STRING "opensource"
 #else
 #define GDRDRV_BUILT_FOR_NVIDIA_FLAVOR_STRING "proprietary"
 #endif
+
+#define GDRDRV_NVIDIA_P2P_PAGE_TABLE_WITH_MODE_MIN_VERSION 0x00010003
 
 //-----------------------------------------------------------------------------
 
@@ -370,6 +381,23 @@ struct gdr_mr {
     unsigned force_pci:1;
 };
 typedef struct gdr_mr gdr_mr_t;
+
+static inline bool gdr_mr_supports_cache_mapping(gdr_mr_t *mr)
+{
+    bool ret = false;
+    if (!gdrdrv_cpu_could_cache_gpu_mappings)
+        return false;
+
+    if (mr && mr->page_table && mr->page_table->entries > 0) {
+        ret = gdr_pfn_is_ram(mr->page_table->pages[0]->physical_address >> PAGE_SHIFT);
+#if GDRDRV_NVIDIA_P2P_PAGE_TABLE_VERSION_COMPATIBLE(NVIDIA_P2P_PAGE_TABLE_VERSION, GDRDRV_NVIDIA_P2P_PAGE_TABLE_WITH_MODE_MIN_VERSION)
+        // Under the CDMM mode, gdr_pfn_is_ram may return false. However, cache mappings are still supported.
+        ret |= !!(mr->page_table->flags & NVIDIA_P2P_PAGE_TABLE_FLAGS_CPU_CACHEABLE);
+#endif
+    }
+
+    return ret;
+}
 
 /**
  * Prerequisite:
@@ -1266,9 +1294,7 @@ static int gdrdrv_req_mapping_type(gdr_info_t *info, void __user *_params)
             // All pages are either RAM or BAR1. We don't need to check every page.
             // Just in case there is a bug that causes entries == 0, we also check that before accessing pages[0].
             // In this case, we won't do mapping. So, it does not matter if we set req_mapping_type to GDR_MR_CACHING.
-            if (!gdrdrv_cpu_can_cache_gpu_mappings
-                || (mr->page_table->entries > 0 && !gdr_pfn_is_ram(mr->page_table->pages[0]->physical_address >> PAGE_SHIFT))
-            ) {
+            if (!gdr_mr_supports_cache_mapping(mr)) {
                 ret = -EOPNOTSUPP;
                 goto out;
             }
@@ -1621,6 +1647,18 @@ static int gdrdrv_mmap(struct file *filp, struct vm_area_struct *vma)
     mr->cpu_mapping_type = GDR_MR_NONE;
     vma->vm_ops = &gdrdrv_vm_ops;
 
+    // nvidia_p2p_get_pages* always return PFNs with the same mapping type.
+    if (mr->req_mapping_type != GDR_MR_NONE) {
+        cpu_mapping_type = mr->req_mapping_type;
+    } else if (gdr_mr_supports_cache_mapping(mr)) {
+        WARN_ON_ONCE(!gdrdrv_cpu_could_cache_gpu_mappings);
+        cpu_mapping_type = GDR_MR_CACHING;
+    } else if (gdrdrv_cpu_must_use_device_mapping) {
+        cpu_mapping_type = GDR_MR_DEVICE;
+    } else {
+        cpu_mapping_type = GDR_MR_WC;
+    }
+
     // check for physically contiguous IO ranges
     p = 0;
     vaddr = vma->vm_start;
@@ -1629,7 +1667,6 @@ static int gdrdrv_mmap(struct file *filp, struct vm_area_struct *vma)
         unsigned long paddr = mr->page_table->pages[p]->physical_address;
         unsigned nentries = 1;
         size_t len;
-        gdr_mr_type_t chunk_mapping_type = GDR_MR_NONE;
 
         gdr_dbg("range start with p=%d vaddr=%lx page_paddr=%lx\n", p, vaddr, paddr);
 
@@ -1656,25 +1693,6 @@ static int gdrdrv_mmap(struct file *filp, struct vm_area_struct *vma)
         // phys range is [paddr, paddr+len-1]
         gdr_dbg("mapping p=%u entries=%d offset=%llx len=%zu vaddr=%lx paddr=%lx\n", 
                 p, nentries, offset, len, vaddr, paddr);
-        if (mr->req_mapping_type == GDR_MR_NONE) {
-            if (gdr_pfn_is_ram(paddr >> PAGE_SHIFT)) {
-                WARN_ON_ONCE(!gdrdrv_cpu_can_cache_gpu_mappings);
-                chunk_mapping_type = GDR_MR_CACHING;
-            } else if (gdrdrv_cpu_must_use_device_mapping) {
-                chunk_mapping_type = GDR_MR_DEVICE;
-            } else {
-                // flagging the whole mr as a WC mapping if at least one chunk is WC
-                chunk_mapping_type = GDR_MR_WC;
-            }
-        } else
-            chunk_mapping_type = mr->req_mapping_type;
-
-        if (cpu_mapping_type == GDR_MR_NONE)
-            cpu_mapping_type = chunk_mapping_type;
-
-        // We don't handle when different chunks have different mapping types.
-        // This scenario should never happen.
-        BUG_ON(cpu_mapping_type != chunk_mapping_type);
 
         ret = gdrdrv_remap_gpu_mem(vma, vaddr, paddr, len, cpu_mapping_type);
         if (ret) {
@@ -1875,15 +1893,15 @@ static int __init gdrdrv_init(void)
         // This might break in the future
         // A better way would be to detect the presence of the IBM-NPU bridges and
         // verify that all GPUs are connected through those
-        gdrdrv_cpu_can_cache_gpu_mappings = 1;
+        gdrdrv_cpu_could_cache_gpu_mappings = 1;
     }
 #elif defined(CONFIG_ARM64)
     // Grace-Hopper supports CPU cached mapping. But this feature might be disabled at runtime.
     // gdrdrv_pin_buffer will do the right thing.
-    gdrdrv_cpu_can_cache_gpu_mappings = 1;
+    gdrdrv_cpu_could_cache_gpu_mappings = 1;
 #endif
 
-    if (gdrdrv_cpu_can_cache_gpu_mappings)
+    if (gdrdrv_cpu_could_cache_gpu_mappings)
         gdr_msg(KERN_INFO, "The platform may support CPU cached mappings. Decision to use cached mappings is left to the pinning function.\n");
 
 #if defined(CONFIG_ARM64)
