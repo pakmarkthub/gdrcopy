@@ -289,7 +289,8 @@ static inline bool gdr_pfn_is_ram(unsigned long pfn)
 #define GDRDRV_BUILT_FOR_NVIDIA_FLAVOR_STRING "proprietary"
 #endif
 
-#define GDRDRV_NVIDIA_P2P_PAGE_TABLE_WITH_MODE_MIN_VERSION 0x00010003
+#define GDRDRV_NVIDIA_P2P_PAGE_TABLE_WITH_FLAGS_MAJOR1_MIN_VERSION 0x00010003
+#define GDRDRV_NVIDIA_P2P_PAGE_TABLE_WITH_FLAGS_MAJOR2_MIN_VERSION 0x00020000
 
 //-----------------------------------------------------------------------------
 
@@ -390,7 +391,8 @@ static inline bool gdr_mr_supports_cache_mapping(gdr_mr_t *mr)
 
     if (mr && mr->page_table && mr->page_table->entries > 0) {
         ret = gdr_pfn_is_ram(mr->page_table->pages[0]->physical_address >> PAGE_SHIFT);
-#if GDRDRV_NVIDIA_P2P_PAGE_TABLE_VERSION_COMPATIBLE(NVIDIA_P2P_PAGE_TABLE_VERSION, GDRDRV_NVIDIA_P2P_PAGE_TABLE_WITH_MODE_MIN_VERSION)
+#if GDRDRV_NVIDIA_P2P_PAGE_TABLE_VERSION_COMPATIBLE(NVIDIA_P2P_PAGE_TABLE_VERSION, GDRDRV_NVIDIA_P2P_PAGE_TABLE_WITH_FLAGS_MAJOR1_MIN_VERSION) || \
+    GDRDRV_NVIDIA_P2P_PAGE_TABLE_VERSION_COMPATIBLE(NVIDIA_P2P_PAGE_TABLE_VERSION, GDRDRV_NVIDIA_P2P_PAGE_TABLE_WITH_FLAGS_MAJOR2_MIN_VERSION)
         // Under the CDMM mode, gdr_pfn_is_ram may return false. However, cache mappings are still supported.
         ret |= !!(mr->page_table->flags & NVIDIA_P2P_PAGE_TABLE_FLAGS_CPU_CACHEABLE);
 #endif
