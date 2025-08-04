@@ -6,6 +6,7 @@
 - Support RHEL 10.0.
 - Support CUDA 13.0.
 - Support the CDMM mode.
+- Support Blackwell.
 - Fix errors when compiling with CUDA 12.6.
 
 ## [2.5] - 2025-03-21

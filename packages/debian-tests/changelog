@@ -7,6 +7,7 @@ gdrcopy-tests (@FULL_VERSION@) stable; urgency=low
 gdrcopy-tests (2.5.1) stable; urgency=low
 
   * Support CUDA 13.0.
+  * Support Blackwell.
   * Fix errors when compiling with CUDA 12.6.
 
  -- GPUDirect Team <gpudirect@nvidia.com>  Mon, 04 Aug 2025 11:59:59 -0700
