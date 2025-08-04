@@ -124,7 +124,7 @@
 - Add a script for packaging gdrcopy in the rpm format.
 
 [master]: https://github.com/NVIDIA/gdrcopy
-[2.5]: https://github.com/NVIDIA/gdrcopy/releases/tag/v2.5.1
+[2.5.1]: https://github.com/NVIDIA/gdrcopy/releases/tag/v2.5.1
 [2.5]: https://github.com/NVIDIA/gdrcopy/releases/tag/v2.5
 [2.4.4]: https://github.com/NVIDIA/gdrcopy/releases/tag/v2.4.4
 [2.4.3]: https://github.com/NVIDIA/gdrcopy/releases/tag/v2.4.3

@@ -365,7 +365,7 @@ rm -rf $RPM_BUILD_DIR/%{name}-%{version}
 %changelog
 * Fri Jul 18 2025 GPUDirect Team <gpudirect@nvidia.com> %{GDR_VERSION}-%{_release}
 - See CHANGELOG.md.
-* Fri Jul 18 2025 GPUDirect Team <gpudirect@nvidia.com> 2.5.1-%{_release}
+* Mon Aug 04 2025 GPUDirect Team <gpudirect@nvidia.com> 2.5.1-%{_release}
 - Support RHEL 10.0.
 - Support CUDA 13.0.
 - Support the CDMM mode.

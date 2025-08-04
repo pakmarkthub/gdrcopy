@@ -2,14 +2,14 @@ gdrdrv-dkms (@FULL_VERSION@) stable; urgency=low
 
   * See CHANGELOG.md.
 
- -- GPUDirect Team <gpudirect@nvidia.com>  Fri, 18 Jul 2025 11:59:59 -0700
+ -- GPUDirect Team <gpudirect@nvidia.com>  Mon, 04 Aug 2025 11:59:59 -0700
 
 gdrdrv-dkms (2.5.1) stable; urgency=low
 
   * Support RHEL 10.0.
   * Support the CDMM mode.
 
- -- GPUDirect Team <gpudirect@nvidia.com>  Fri, 18 Jul 2025 11:59:59 -0700
+ -- GPUDirect Team <gpudirect@nvidia.com>  Mon, 04 Aug 2025 11:59:59 -0700
 
 gdrdrv-dkms (2.5) stable; urgency=low
 
