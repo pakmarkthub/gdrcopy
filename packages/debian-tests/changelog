@@ -2,9 +2,17 @@ gdrcopy-tests (@FULL_VERSION@) stable; urgency=low
 
   * See CHANGELOG.md.
 
- -- GPUDirect Team <gpudirect@nvidia.com>  Fri, 21 Mar 2025 11:59:59 -0700
+ -- GPUDirect Team <gpudirect@nvidia.com>  Mon, 04 Aug 2025 11:59:59 -0700
 
-libgdrapi (2.5) stable; urgency=low
+gdrcopy-tests (2.5.1) stable; urgency=low
+
+  * Support CUDA 13.0.
+  * Support Blackwell.
+  * Fix errors when compiling with CUDA 12.6.
+
+ -- GPUDirect Team <gpudirect@nvidia.com>  Mon, 04 Aug 2025 11:59:59 -0700
+
+gdrcopy-tests (2.5) stable; urgency=low
 
   * Extend gdrcopy_sanity coverage to gdr_pin_buffer_v2.
   * Waive some unit tests in gdrcopy_sanity if the GPU compute mode is not set as default.

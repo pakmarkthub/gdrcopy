@@ -2,7 +2,13 @@ libgdrapi (@FULL_VERSION@) stable; urgency=low
 
   * See CHANGELOG.md.
 
- -- GPUDirect Team <gpudirect@nvidia.com>  Fri, 21 Mar 2025 11:59:59 -0700
+ -- GPUDirect Team <gpudirect@nvidia.com>  Mon, 04 Aug 2025 11:59:59 -0700
+
+libgdrapi (2.5.1) stable; urgency=low
+
+  * No change.
+
+ -- GPUDirect Team <gpudirect@nvidia.com>  Mon, 04 Aug 2025 11:59:59 -0700
 
 libgdrapi (2.5) stable; urgency=low
 

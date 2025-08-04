@@ -70,4 +70,4 @@ for sm in $SM_LIST; do
     GENCODE_FLAGS="$GENCODE_FLAGS -gencode arch=compute_$sm,code=sm_$sm"
 done
 
-echo "$GENCODE_FLAGS" 
+echo "$GENCODE_FLAGS"
