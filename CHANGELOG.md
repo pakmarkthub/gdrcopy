@@ -2,7 +2,7 @@
 
 ## [master]
 
-## [2.5.1] - 2025-07-18
+## [2.5.1] - 2025-08-04
 - Support RHEL 10.0.
 - Support CUDA 13.0.
 - Support the CDMM mode.
