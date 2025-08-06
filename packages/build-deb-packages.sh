@@ -241,12 +241,15 @@ ex cd ${CWD}
 for item in `ls ${tmpdir}/*.deb`; do
     item_name=`basename $item`
     item_name=`echo $item_name | sed -e "s/\.deb//g"`
-    if echo "$item_name" | grep -q "tests"; then
-        item_name="${item_name}${release}+cuda${CUDA_MAJOR}.${CUDA_MINOR}.deb"
-    else
-        item_name="${item_name}${release}.deb"
+    item_base_name=`echo ${item_name} | cut -d"_" -f1`
+    item_arch_name=`echo ${item_name} | cut -d"_" -f3`
+    output_base_name="${item_base_name}_${VERSION}-${DEBIAN_VERSION}_${item_arch_name}${release}"
+    output_name="${output_base_name}"
+    if echo "$item_base_name" | grep -q "tests"; then
+        output_name="${output_name}+cuda${CUDA_MAJOR}.${CUDA_MINOR}"
     fi
-    ex cp $item ./${item_name}
+    output_name="${output_name}.deb"
+    ex cp $item ./${output_name}
 done
 ex cp ${tmpdir}/*.tar.* .
 ex cp ${tmpdir}/*.dsc .
