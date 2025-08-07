@@ -8,6 +8,7 @@
 - Support the CDMM mode.
 - Support Blackwell.
 - Fix errors when compiling with CUDA 12.6.
+- Fix build-deb-packages.sh to always create .deb with deb versions in the filenames.
 
 ## [2.5] - 2025-03-21
 - Introduce gdr\_pin\_buffer\_v2 API, GDR\_PIN\_FLAG\_FORCE\_PCIE pin flag and the GDR\_ATTR\_SUPPORT\_PIN\_FLAG\_FORCE\_PCIE attribute. Extend gdrcopy\_sanity coverage to those new APIs.
